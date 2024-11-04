@@ -1,0 +1,29 @@
+services:
+  tomcat:
+    build: build/dockerImage
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_OPTS: -XX:+UseContainerSupport -XX:InitialRAMPercentage=75 -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError
+
+      # https://opentelemetry.io/docs/languages/java/configuration/
+      OTEL_JAVAAGENT_ENABLED: true
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      OTEL_SERVICE_NAME: kotlin-springboot-tomcat
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      SPRING_PROFILES_ACTIVE: virtual2
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    read_only: true
+    tmpfs:
+      - /tmp
+    develop:
+      watch:
+        - action: rebuild
+          path: build/libs/tomcat.jar
+        - action: rebuild
+          path: src/main/docker/Dockerfile

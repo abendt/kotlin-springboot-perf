@@ -1,0 +1,21 @@
+services:
+  webflux:
+    build: build/dockerImage
+    ports:
+      - "8081:8080"
+    environment:
+      - JAVA_OPTS=-XX:+UseContainerSupport -XX:InitialRAMPercentage=75 -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError -Dreactor.schedulers.defaultBoundedElasticOnVirtualThreads=true
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    read_only: true
+    tmpfs:
+      - /tmp
+    develop:
+      watch:
+        - action: rebuild
+          path: build/libs/webflux.jar
+        - action: rebuild
+          path: src/main/docker/Dockerfile

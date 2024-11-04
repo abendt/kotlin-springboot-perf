@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: kotlin-springboot-tomcat
+
+server:
+  tomcat:
+    #    threads:
+    #      max: 500
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'

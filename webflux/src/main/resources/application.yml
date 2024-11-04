@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: kotlin-springboot-webflux
+
+server:
+  address: 0.0.0.0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
