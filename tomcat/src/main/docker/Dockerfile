@@ -13,13 +13,11 @@ WORKDIR /backend
 
 RUN apk update && apk add --no-cache curl jq
 
-RUN curl --no-progress-meter -L -O https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
-
 USER nobody
 
 ENV JAVA_OPTS=""
 ENV OTEL_JAVAAGENT_ENABLED=false
-ENTRYPOINT ["sh", "-c", "java -Djava.security.egd=file:/dev/./urandom -Duser.language=en -Duser.country=US -javaagent:/backend/opentelemetry-javaagent.jar $JAVA_OPTS -jar backend.jar"]
+ENTRYPOINT ["sh", "-c", "java -Djava.security.egd=file:/dev/./urandom $JAVA_OPTS -jar backend.jar"]
 
 COPY --from=builder /builder/extracted/dependencies/ ./
 COPY --from=builder /builder/extracted/application/ ./

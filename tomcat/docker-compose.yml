@@ -5,14 +5,7 @@ services:
       - "8080:8080"
     environment:
       JAVA_OPTS: -XX:+UseContainerSupport -XX:InitialRAMPercentage=75 -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError
-
-      # https://opentelemetry.io/docs/languages/java/configuration/
-      OTEL_JAVAAGENT_ENABLED: true
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
-      OTEL_SERVICE_NAME: kotlin-springboot-tomcat
-      OTEL_METRICS_EXPORTER: none
-      OTEL_LOGS_EXPORTER: none
-      SPRING_PROFILES_ACTIVE: virtual2
+      SPRING_PROFILES_ACTIVE:
     deploy:
       resources:
         limits:

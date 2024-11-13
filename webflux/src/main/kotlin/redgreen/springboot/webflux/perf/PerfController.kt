@@ -4,10 +4,10 @@ import java.util.concurrent.Executors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
-import sample.cpuIntensiveTask
 
 @RestController
 class PerfController(val perfService: PerfService) {
@@ -21,8 +21,6 @@ class PerfController(val perfService: PerfService) {
 
     @GetMapping("/suspendNoop")
     suspend fun suspendNoop(): String {
-        println("XXX")
-        println(Thread.currentThread().name)
         return "suspendNoop"
     }
 
@@ -57,26 +55,33 @@ class PerfController(val perfService: PerfService) {
         }
 
     @GetMapping("/cpu0")
-    fun cpuDirect0(): String {
-        return perfService.performCpuWork()
+    fun cpuDirect0(@RequestParam("limit") limit: Int): String {
+        return perfService.performCpuWork(limit)
     }
 
     @GetMapping("/cpu1")
-    suspend fun cpuDirect(): String {
-        return perfService.performCpuWork()
+    suspend fun cpuDirect(@RequestParam("limit") limit: Int): String {
+        return perfService.performCpuWork(limit)
     }
 
     @GetMapping("/cpu2")
-    suspend fun cpuDispatcher(): String {
+    suspend fun cpuDispatcher(@RequestParam("limit") limit: Int): String {
         return withContext(Dispatchers.Default) { // size = number of processors
-            perfService.performCpuWork()
+            perfService.performCpuWork(limit)
         }
     }
 
     @GetMapping("/cpu3")
-    fun monoCpu(): Mono<String> {
+    fun monoCpu(@RequestParam("limit") limit: Int): Mono<String> {
         return Mono.fromCallable {
-            perfService.performCpuWork()
+            perfService.performCpuWork(limit)
+        }
+    }
+
+    @GetMapping("/cpu4")
+    fun monoCpu2(@RequestParam("limit") limit: Int): Mono<String> {
+        return Mono.fromCallable {
+            perfService.performCpuWork(limit)
         }.subscribeOn(Schedulers.parallel()) // size = number of processors
     }
 }

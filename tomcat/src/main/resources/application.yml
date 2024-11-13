@@ -1,11 +1,9 @@
 spring:
   application:
     name: kotlin-springboot-tomcat
-
-server:
-  tomcat:
-    #    threads:
-    #      max: 500
+  mvc:
+    async:
+      request-timeout: -1
 
 management:
   endpoints:

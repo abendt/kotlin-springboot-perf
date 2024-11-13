@@ -2,30 +2,28 @@
 
 trap "exit" SIGINT
 
-function grafana_annotate {
-    # Variables
-    base_url="http://localhost:3000"
-    endpoint="/api/annotations"
-    username="admin"
-    password="admin"
-    current_time=$(date +%s)000  # Current time in milliseconds
-    id="$1"
+#limits=("100" "1000" "10000" "50000" "100000" "200000" "300000")
+#wrk_args="--latency -t12 -c400 -d30s --timeout 30s"
 
-    json_body=$(jo -p time="$current_time" tags=$(jo -a "gatling") text="$id starting")
+wrk_args="--latency -t12 -c400 -d10s --timeout 30s"
+limits=("1000")
 
-    # Curl command
-    result=$(curl -X POST "$base_url$endpoint" \
-         -u "$username:$password" \
-         -H "Content-Type: application/json" \
-         -H "Accept: application/json" \
-         -d "$json_body" \
-         -w "%{http_code}" -o /dev/null -s | grep -q 200 && echo "Request successful!" || echo "Request failed!")
+function run_loadtest() {
+    for ep in "$@"; do
+        wrk $wrk_args http://localhost:8080/$ep?limit=$limit
+        sleep 30
+    done
 }
 
-for ep in "noop" "suspendNoop" "monoIO1" "monoIO2" "dispatcherIO" #
-#for ep in "blockingIO"
-#for ep in "cpu0" "cpu1" "cpu2" "cpu3"
-do
-    grafana_annotate $ep
-    wrk --latency -t12 -c400 -d30s --timeout 30s http://localhost:8081/$ep
-done
+function run_loadtest_cpu() {
+    for ep in "$@"; do
+    for limit in "${limits[@]}" ; do
+        wrk $wrk_args http://localhost:8080/$ep?limit=$limit
+        sleep 30
+    done
+    done
+}
+
+run_loadtest "noop" "suspendNoop"
+run_loadtest "blockingIO" "monoIO1" "monoIO2" "dispatcherIO"
+run_loadtest_cpu "cpu0" "cpu1" "cpu2" "cpu3" "cpu4"

@@ -11,6 +11,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -18,8 +19,8 @@ class PerfController(
     val myService: PerfService
 ) {
     private val ioExecutor = Executors.newCachedThreadPool()
-    private val ioDispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
-    private val jobExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
+    private val ioDispatcher = ioExecutor.asCoroutineDispatcher()
+    private val fixedExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
 
     @GetMapping("/noop")
     fun noop(): String {
@@ -28,8 +29,6 @@ class PerfController(
 
     @GetMapping("/suspendNoop")
     suspend fun suspendNoop(): String {
-        println(Thread.currentThread().name)
-
         return "suspendNoop"
     }
 
@@ -47,6 +46,9 @@ class PerfController(
         }, ioExecutor)
     }
 
+    /**
+     * this is wrong usage of the Coroutine API. coroutineScope will wait until the nested async is done
+     */
     @GetMapping("/deferredIO1")
     suspend fun deferredIO1(): Deferred<String> =
         coroutineScope {
@@ -56,7 +58,9 @@ class PerfController(
             }
         }
 
-
+    /**
+     * this is wrong usage of the Coroutine API. coroutineScope will wait until the nested async is done
+     */
     @GetMapping("/deferredIO2")
     suspend fun deferredIO2(): Deferred<String> =
         coroutineScope {
@@ -74,6 +78,13 @@ class PerfController(
             "deferredIO3"
         }
 
+    @OptIn(DelicateCoroutinesApi::class)
+    @GetMapping("/deferredIO34")
+    fun deferredIO4(): Deferred<String> =
+        GlobalScope.async(ioDispatcher) {
+            myService.performIoWork()
+            "deferredIO3"
+        }
 
     @GetMapping("/suspendIO")
     suspend fun supendIO(): String {
@@ -84,26 +95,37 @@ class PerfController(
     }
 
     @GetMapping("/cpu0")
-    fun cpuDirect0(): String {
-        return myService.performCpuWork()
+    fun cpuDirect0(@RequestParam("limit") limit: Int): String {
+        return myService.performCpuWork(limit)
+    }
+
+    @GetMapping("/cpu0semaphore")
+    fun cpuDirect0Sem(@RequestParam("limit") limit: Int): String {
+        return myService.performCpuWorkUsingSemaphore(limit)
     }
 
     @GetMapping("/cpu1")
-    suspend fun cpuDirect(): String {
-        return myService.performCpuWork()
+    suspend fun cpuDirect(@RequestParam("limit") limit: Int): String {
+        return myService.performCpuWork(limit)
     }
 
     @GetMapping("/cpu2")
-    suspend fun cpuDispatcher(): String {
+    suspend fun cpuDispatcher(@RequestParam("limit") limit: Int): String {
         return withContext(Dispatchers.Default) {
-            myService.performCpuWork()
+            myService.performCpuWork(limit)
         }
     }
 
     @GetMapping("/cpu3")
-    fun cpuThreadpool(): CompletableFuture<String> =
+    fun cpuThreadpool(@RequestParam("limit") limit: Int): CompletableFuture<String> =
         CompletableFuture.supplyAsync({
-            myService.performCpuWork()
-        }, jobExecutor)
+            myService.performCpuWork(limit)
+        }, fixedExecutor)
 
+    @GetMapping("/cpu4")
+    suspend fun cpuCoop(@RequestParam("limit") limit: Int, @RequestParam("batch") batch: Int): String {
+        return withContext(Dispatchers.Default) {
+            myService.performCpuWorkCoop(limit, batch)
+        }
+    }
 }
