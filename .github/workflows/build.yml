@@ -45,20 +45,3 @@ jobs:
           path: '**/build/test-results/**/TEST-*.xml'
           reporter: java-junit
 
-      - run: |
-          ls koverage/build/reports/kover
-          ls ${{ github.workspace }}/koverage/build/reports/kover/report.xml
-
-      - name: Add coverage report to PR
-        id: kover
-        uses: mi-kas/kover-report@v1
-        with:
-          path: |
-            ${{ github.workspace }}/koverage/build/reports/kover/report.xml
-          title: Code Coverage
-          update-comment: true
-          min-coverage-overall: 80
-          min-coverage-changed-files: 80
-          coverage-counter-type: LINE
-
-
